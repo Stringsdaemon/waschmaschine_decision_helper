@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Washing Machine Comparison — Blind Spec Matrix + Scoring</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #6c757d;
+    --accent-a: #e74c3c;
+    --accent-b: #3498db;
+    --win: #27ae60;
+    --border: #dee2e6;
+    --hover: #f1f3f5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  .blind-badge { display: inline-block; background: #2d3436; color: #fff; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 4px; letter-spacing: 1px; margin-left: 0.5rem; vertical-align: middle; }
+
+  .card { background: var(--card); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1.5rem; overflow: hidden; }
+  .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 1.05rem; background: #fafbfc; display: flex; align-items: center; gap: 0.5rem; }
+  .card-body { padding: 1.5rem; }
+
+  .spec-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .spec-table th, .spec-table td { padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .spec-table th { background: #f8f9fa; font-weight: 600; white-space: nowrap; }
+  .spec-table th:first-child { border-radius: 6px 0 0 0; }
+  .spec-table th:last-child { border-radius: 0 6px 0 0; }
+  .spec-table .cat-header { background: #eef2f7; font-weight: 700; border-bottom: 2px solid #d0d7e2; }
+  .spec-table .winner { background: #e8f8f0; }
+  .spec-table .winner td:last-child::after { content: " ✓"; color: var(--win); font-weight: bold; }
+  .spec-table .winner-a { background: #fdecea; }
+  .spec-table .winner-b { background: #e8f4fd; }
+  .label-a { display: inline-block; background: var(--accent-a); color: #fff; font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 3px; font-weight: 700; margin-right: 0.3rem; }
+  .label-b { display: inline-block; background: var(--accent-b); color: #fff; font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 3px; font-weight: 700; margin-right: 0.3rem; }
+
+  .score-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .score-table th, .score-table td { padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .score-table th { background: #f8f9fa; font-weight: 600; }
+  .score-table .total { font-weight: 700; font-size: 1.05rem; background: #f0f4f8; }
+  .score-table .score-a { background: #fdecea; }
+  .score-table .score-b { background: #e8f4fd; }
+
+  .bar { display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin: 0.5rem 0; }
+  .bar-a { background: var(--accent-a); color: #fff; text-align: center; line-height: 28px; font-size: 0.75rem; font-weight: 700; }
+  .bar-b { background: var(--accent-b); color: #fff; text-align: center; line-height: 28px; font-size: 0.75rem; font-weight: 700; }
+  .bar-gap { background: #e9ecef; }
+
+  .key-finding { display: flex; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+  .key-finding:last-child { border-bottom: none; }
+  .kf-icon { font-size: 1.2rem; flex-shrink: 0; width: 1.5rem; }
+  .kf-label { font-weight: 600; min-width: 100px; flex-shrink: 0; font-size: 0.85rem; }
+  .kf-detail { color: #444; }
+
+  .tag { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+  .tag-green { background: #d4edda; color: #155724; }
+  .tag-red { background: #f8d7da; color: #721c24; }
+  .tag-amber { background: #fff3cd; color: #856404; }
+  .tag-blue { background: #d1ecf1; color: #0c5460; }
+
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 700px) { .summary-grid { grid-template-columns: 1fr; } }
+  .summary-box { padding: 1.2rem; border-radius: 8px; border: 1px solid var(--border); }
+  .summary-box h3 { margin-bottom: 0.5rem; font-size: 1rem; }
+  .summary-box ul { padding-left: 1.2rem; font-size: 0.9rem; }
+  .summary-box li { margin-bottom: 0.3rem; }
+  .box-a { border-left: 4px solid var(--accent-a); }
+  .box-b { border-left: 4px solid var(--accent-b); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+  .reveal { text-align: center; padding: 2rem; margin-top: 1rem; }
+  .reveal h2 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  .reveal .models { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; margin: 1rem 0; }
+  .reveal .model { padding: 1rem 1.5rem; border-radius: 8px; min-width: 200px; }
+  .model-a { background: #fdecea; border: 1px solid var(--accent-a); }
+  .model-b { background: #e8f4fd; border: 1px solid var(--accent-b); }
+  .model-name { font-weight: 700; font-size: 1.1rem; }
+  .model-price { font-size: 0.9rem; color: var(--muted); margin-top: 0.2rem; }
+  .badge { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+  .badge-a { background: var(--accent-a); color: #fff; }
+  .badge-b { background: var(--accent-b); color: #fff; }
+
+  .ribbon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 0.8rem 1.5rem; text-align: center; font-weight: 700; border-radius: 8px; margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🧺 Washing Machine Comparison</h1>
+<p class="subtitle">Blind spec matrix · Weighted scoring · Key findings · Decision summary<br>
+<small>Generated 30 June 2026</small></p>
+
+<!-- ============ SECTION: REVEAL ============ -->
+<div class="card">
+  <div class="card-header">🎭 Blind Reveal — The Machines</div>
+  <div class="card-body reveal">
+    <div class="models">
+      <div class="model model-a">
+        <div class="model-name"><span class="badge badge-a">A</span> Dreame DWF10M70DAEU</div>
+        <div class="model-price">Premium P5 Washer</div>
+        <div style="margin-top:0.5rem; font-size:0.85rem;">
+          10 kg · 1400 rpm · 20yr motor warranty<br>
+          <strong>€479</strong> (dreametech.com) / €530 (Saturn)
+        </div>
+      </div>
+      <div class="model model-b">
+        <div class="model-name"><span class="badge badge-b">B</span> LG F4WX9092B</div>
+        <div class="model-price">Serie 8 Front Loader</div>
+        <div style="margin-top:0.5rem; font-size:0.85rem;">
+          9 kg · 1350 rpm · 10yr motor warranty<br>
+          <strong>€649</strong> (Saturn)
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;">
+      <span class="tag tag-amber">Price gap: €170</span>
+      <span class="tag tag-blue" style="margin-left:0.5rem;">2-4 loads/week · No dryer · ME/CFS considerations</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SECTION: BLIND MATRIX ============ -->
+<div class="card">
+  <div class="card-header">📊 Blind Spec Matrix<span class="blind-badge">NO BRAND BIAS</span></div>
+  <div class="card-body">
+    <table class="spec-table">
+      <tr>
+        <th style="width:30%">Category / Spec</th>
+        <th style="width:35%"><span class="label-a">A</span> Dreame</th>
+        <th style="width:35%"><span class="label-b">B</span> LG</th>
+      </tr>
+
+      <tr class="cat-header"><td colspan="3">General</td></tr>
+      <tr><td>Capacity</td><td class="winner"><strong>10 kg</strong></td><td>9 kg</td></tr>
+      <tr><td>Max spin speed</td><td class="winner"><strong>1400 rpm</strong></td><td>1350 rpm</td></tr>
+      <tr><td>Dimensions (W×D×H)</td><td>60 × 58 × 85 cm</td><td>60 × 56.5 × 85 cm</td></tr>
+      <tr><td>Net weight</td><td>65 kg</td><td><strong>~72 kg</strong> (more stable)</td></tr>
+      <tr><td>Door</td><td>520 mm double-pane glass (anti-scald)</td><td>Tempered safety glass</td></tr>
+
+      <tr class="cat-header"><td colspan="3">Motor & Longevity</td></tr>
+      <tr><td>Motor type</td><td>Brushless inverter (belt-free)</td><td><strong>AI Inverter Direct Drive®</strong> (belt-free, 6-motion)</td></tr>
+      <tr><td>Motor warranty</td><td class="winner"><strong>20 years</strong></td><td>10 years</td></tr>
+      <tr><td>Drum diameter</td><td><strong>530 mm</strong> (tilted)</td><td>Not published</td></tr>
+      <tr><td>Drum motion</td><td>4-direction hand-wash simulation</td><td><strong>AI DD®</strong> (AI-selected from 20,000+ patterns)</td></tr>
+      <tr><td>Standard warranty</td><td>24 months (legal minimum)</td><td>24 months (legal minimum)</td></tr>
+
+      <tr class="cat-header"><td colspan="3">Energy & Water Efficiency</td></tr>
+      <tr><td>Energy class</td><td>A</td><td class="winner"><strong>A–55%</strong> (55% better than A threshold)</td></tr>
+      <tr><td>kWh/100 cycles (eco 40-60)</td><td>36</td><td class="winner"><strong>22</strong></td></tr>
+      <tr><td>kWh/cycle eco 40-60 (full)</td><td>0.359</td><td class="winner"><strong>0.338</strong></td></tr>
+      <tr><td>kWh/cycle eco 40-60 (half)</td><td>—</td><td><strong>0.198</strong></td></tr>
+      <tr><td>L/cycle eco 40-60</td><td>~51</td><td class="winner"><strong>45</strong></td></tr>
+      <tr><td>Annual energy cost (2 loads/wk)</td><td>—</td><td><span class="tag tag-green">~€7 saved vs A</span></td></tr>
+
+      <tr class="cat-header"><td colspan="3">Spin Performance</td></tr>
+      <tr><td>Spin efficiency class</td><td><span class="tag tag-red"><strong>C</strong></span></td><td class="winner"><span class="tag tag-green"><strong>B</strong></span></td></tr>
+      <tr><td>Residual moisture</td><td><span class="tag tag-red"><strong>62.0%</strong></span></td><td class="winner"><span class="tag tag-green"><strong>53.9%</strong></span></td></tr>
+      <tr><td>Clothes feel after spin</td><td>Significantly wetter</td><td>Drier — less time on line</td></tr>
+      <tr><td>Wash efficiency index</td><td>1.031</td><td>~1.031 (presumed)</td></tr>
+
+      <tr class="cat-header"><td colspan="3">Noise</td></tr>
+      <tr><td>Spin noise</td><td>76 dB(A)</td><td class="winner"><strong>72 dB(A)</strong></td></tr>
+      <tr><td>Noise class (spin)</td><td>B</td><td class="winner"><strong>A</strong> (Triple-A rated)</td></tr>
+      <tr><td>Perceived difference</td><td>Baseline</td><td>~2× quieter perception</td></tr>
+
+      <tr class="cat-header"><td colspan="3">Programs & Features</td></tr>
+      <tr><td>Total programs</td><td>14</td><td class="winner"><strong>16 + downloadable</strong></td></tr>
+      <tr><td>Quick wash</td><td>15 min (1 kg)</td><td class="winner"><strong>14 min</strong> + TurboWash 360° 39 min</td></tr>
+      <tr><td>Eco 40-60 duration (full)</td><td><strong>3h58</strong></td><td>3h48 (228 min)</td></tr>
+      <tr><td>Steam function</td><td>✅ Has steam generator</td><td class="winner"><strong>✅ Steam+</strong> (documented + certified)</td></tr>
+      <tr><td>Wrinkle reduction</td><td>❓ Not documented</td><td class="winner"><strong>✅ Documented</strong> (fibers relax)</td></tr>
+      <tr><td>Microplastics program</td><td>❌ No</td><td class="winner"><strong>✅ Yes</strong> (-60% fiber release)</td></tr>
+      <tr><td>AllergyCare / Anti-Allergie</td><td>✅ Yes</td><td>✅ Yes (BAF certified)</td></tr>
+      <tr><td>Wool/Handwash</td><td>✅ Wool program</td><td class="winner">✅ <strong>Wolle/Handwäsche</strong> + Delicates</td></tr>
+      <tr><td>Max temperature</td><td>85°C</td><td class="winner"><strong>95°C</strong></td></tr>
+      <tr><td>Drum light</td><td>✅ Yes</td><td>❌ No</td></tr>
+
+      <tr class="cat-header"><td colspan="3">Smart Features</td></tr>
+      <tr><td>WiFi / App</td><td><span class="tag tag-red">❌ None</span></td><td class="winner"><span class="tag tag-green">✅ LG ThinQ®</span></td></tr>
+      <tr><td>Remote start / monitoring</td><td>❌</td><td class="winner">✅</td></tr>
+      <tr><td>Program download</td><td>❌</td><td class="winner">✅</td></tr>
+      <tr><td>Smart Diagnosis</td><td>❌</td><td class="winner">✅</td></tr>
+      <tr><td>Voice assistant</td><td>❌</td><td class="winner">✅ Alexa + Google Assistant</td></tr>
+
+      <tr class="cat-header"><td colspan="3">Safety & Convenience</td></tr>
+      <tr><td>Water protection</td><td>✅ Aquastop</td><td>✅ AquaLock®</td></tr>
+      <tr><td>Child lock</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Add laundry mid-cycle</td><td>✅</td><td>✅</td></tr>
+      <tr><td>Delay start</td><td><strong>1-24 h</strong></td><td>3-19 h</td></tr>
+      <tr><td>Auto restart after power cut</td><td>❌</td><td class="winner">✅</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ============ SECTION: SCORING ============ -->
+<div class="card">
+  <div class="card-header">⚖️ Weighted Scoring (Adjusted for Usage)</div>
+  <div class="card-body">
+    <p style="margin-bottom:1rem; font-size:0.9rem; color:var(--muted);">
+      Weights adjusted for 2-4 loads/week, noise sensitivity, ME/CFS consideration, and no dryer.
+      Energy/water weight lowered because annual savings are only ~€7.
+    </p>
+    <table class="score-table">
+      <tr>
+        <th>Category</th>
+        <th>Weight</th>
+        <th><span class="label-a">A</span> Dreame</th>
+        <th><span class="label-b">B</span> LG</th>
+        <th>Why</th>
+      </tr>
+      <tr>
+        <td>Motor & Longevity</td>
+        <td><strong>28%</strong></td>
+        <td class="score-a"><strong>9</strong> → 252</td>
+        <td>7 → 196</td>
+        <td style="font-size:0.8rem;">20yr warranty vs 10yr</td>
+      </tr>
+      <tr>
+        <td>Noise</td>
+        <td><strong>22%</strong></td>
+        <td>6 → 132</td>
+        <td class="score-b"><strong>9</strong> → 198</td>
+        <td style="font-size:0.8rem;">72 vs 76 dB(A) — 2× perceived diff</td>
+      </tr>
+      <tr>
+        <td>Steam / Wrinkle Reduction</td>
+        <td><strong>22%</strong></td>
+        <td>5 → 110</td>
+        <td class="score-b"><strong>9</strong> → 198</td>
+        <td style="font-size:0.8rem;">Both have steam, but LG documented + certified for wrinkle reduction</td>
+      </tr>
+      <tr>
+        <td>Energy & Water</td>
+        <td><strong>8%</strong></td>
+        <td>5 → 40</td>
+        <td class="score-b"><strong>10</strong> → 80</td>
+        <td style="font-size:0.8rem;">~€7/yr savings — technically better, practically minor</td>
+      </tr>
+      <tr>
+        <td>Capacity</td>
+        <td><strong>10%</strong></td>
+        <td class="score-a"><strong>8</strong> → 80</td>
+        <td>7 → 70</td>
+        <td style="font-size:0.8rem;">10 kg vs 9 kg — marginal for 2-4 loads/wk</td>
+      </tr>
+      <tr>
+        <td>Microplastics</td>
+        <td><strong>5%</strong></td>
+        <td>1 → 5</td>
+        <td class="score-b"><strong>8</strong> → 40</td>
+        <td style="font-size:0.8rem;">Only LG has it</td>
+      </tr>
+      <tr>
+        <td>Smart Features</td>
+        <td><strong>5%</strong></td>
+        <td>1 → 5</td>
+        <td class="score-b"><strong>9</strong> → 45</td>
+        <td style="font-size:0.8rem;">Dreame none vs LG full ThinQ</td>
+      </tr>
+      <tr class="total">
+        <td><strong>Total</strong></td>
+        <td><strong>100%</strong></td>
+        <td class="score-a"><strong>624</strong></td>
+        <td class="score-b"><strong>827</strong></td>
+        <td></td>
+      </tr>
+    </table>
+
+    <div class="bar" style="margin-top:1rem;">
+      <div class="bar-a" style="width:43%">A: 624</div>
+      <div class="bar-gap" style="width:14%"></div>
+      <div class="bar-b" style="width:43%">B: 827</div>
+    </div>
+    <p style="font-size:0.8rem; color:var(--muted); text-align:center;">Blue section shows LG's extra score margin</p>
+  </div>
+</div>
+
+<!-- ============ SECTION: KEY CORRECTIONS ============ -->
+<div class="card">
+  <div class="card-header">🔍 Key Corrections Discovered During Research</div>
+  <div class="card-body">
+    <div class="key-finding">
+      <div class="kf-icon">🔄</div>
+      <div class="kf-label">Spin class</div>
+      <div class="kf-detail">Dreame is <strong>C</strong> (not B as initially reported). LG is <strong>B</strong>.</div>
+    </div>
+    <div class="key-finding">
+      <div class="kf-icon">💧</div>
+      <div class="kf-label">Residual moisture</div>
+      <div class="kf-detail">Dreame <strong>62.0%</strong> (was estimated at ~52-54%). LG <strong>53.9%</strong>. Significant difference — Dreame leaves clothes much wetter.</div>
+    </div>
+    <div class="key-finding">
+      <div class="kf-icon">🌫️</div>
+      <div class="kf-label">Steam</div>
+      <div class="kf-detail">Both have steam. LG's <strong>Steam+</strong> has documented wrinkle reduction + BAF certification. Dreame has a steam generator but <strong>no documentation</strong> on its purpose or effectiveness for wrinkles.</div>
+    </div>
+    <div class="key-finding">
+      <div class="kf-icon">⚡</div>
+      <div class="kf-label">Energy savings</div>
+      <div class="kf-detail">LG uses 22 vs 36 kWh/100 cycles. At 2 loads/week, <strong>~€7/year savings</strong> — real but practically negligible vs the price difference.</div>
+    </div>
+    <div class="key-finding">
+      <div class="kf-icon">💰</div>
+      <div class="kf-label">Actual prices found</div>
+      <div class="kf-detail"><strong>Dreame DWF11L0TAEU (9kg):</strong> €479 on dreametech.com (UVP €749)<br><strong>Dreame DWF10M70DAEU (10kg):</strong> €530 on Saturn<br><strong>LG F4WX9092B:</strong> €649 on Saturn (UVP €899)</div>
+    </div>
+    <div class="key-finding">
+      <div class="kf-icon">🛡️</div>
+      <div class="kf-label">Motor warranty</div>
+      <div class="kf-detail">Dreame offers <strong>20 years</strong> on the motor vs LG's 10 years. However: Dreame is a new brand in washing machines in Germany — parts/service availability over 10+ years is unknown. LG has a proven 15+ year track record.</div>
+    </div>
+    <div class="key-finding">
+      <div class="kf-icon">📦</div>
+      <div class="kf-label">Delivery date (Dreame)</div>
+      <div class="kf-detail">Dreame from dreametech.com: <strong>est. July 25, 2026</strong>. LG from Saturn: likely available immediately.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SECTION: SUMMARY ============ -->
+<div class="card">
+  <div class="card-header">📋 Decision Summary</div>
+  <div class="card-body">
+    <div class="summary-grid">
+      <div class="summary-box box-a">
+        <h3><span class="badge badge-a">A</span> Dreame — "Value & Motor"</h3>
+        <ul>
+          <li><strong>€479</strong> — €170 cheaper</li>
+          <li>20-year motor warranty</li>
+          <li>10 kg capacity</li>
+          <li>Has steam generator (wrinkle effect unknown)</li>
+          <li>No WiFi/smart features</li>
+          <li>Spin class C: <strong>62% residual moisture</strong></li>
+          <li>Unknown brand for German service network</li>
+          <li>Delivery from July 25, 2026</li>
+        </ul>
+      </div>
+      <div class="summary-box box-b">
+        <h3><span class="badge badge-b">B</span> LG — "Proven & Documented"</h3>
+        <ul>
+          <li><strong>€649</strong> — €170 more expensive</li>
+          <li>10-year motor warranty (proven track record)</li>
+          <li>9 kg capacity</li>
+          <li><strong>Steam+</strong> documented wrinkle reduction</li>
+          <li>Full ThinQ app + remote diagnostics</li>
+          <li>Spin class B: <strong>53.9% residual moisture</strong></li>
+          <li>Established service network in Germany</li>
+          <li>Available immediately</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="ribbon">
+      Weighted score: LG 827 vs Dreame 624 — LG leads on noise, steam effectiveness, spin-drying, and features.
+      Dreame wins on price, motor warranty, and capacity.
+    </div>
+
+    <div style="margin-top:1.5rem; padding:1rem; background:#fff8f0; border-radius:8px; border:1px solid #ffd8a8; font-size:0.9rem;">
+      <strong>💡 Bottom line from the research:</strong> If €170 isn't a stretch, the LG gives more documented quality-of-life benefits (quieter, better spin-drying, wrinkle reduction for ME/CFS). The Dreame is a solid value choice if you're comfortable with the brand risk and the wetter spin result. The manual didn't clarify Dreame's steam effectiveness, which remains the biggest unknown.
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
